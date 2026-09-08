@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Norfat.Api/Norfat.Api.csproj" />
+  <Project Path="Norfat.Application/Norfat.Application.csproj" />
+  <Project Path="Norfat.Domain/Norfat.Domain.csproj" />
+  <Project Path="Norfat.Infrastructure/Norfat.Infrastructure.csproj" />
+</Solution>

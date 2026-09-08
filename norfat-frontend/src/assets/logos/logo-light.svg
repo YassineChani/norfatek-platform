@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" fill="none">
+  <defs>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="35%" stop-color="#94A3B8" />
+      <stop offset="70%" stop-color="#0078FF" />
+      <stop offset="100%" stop-color="#0B2D4F" />
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0078FF" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Industrial Gear-N Monogram -->
+  <g transform="translate(10, 10)">
+    <!-- Gear outer cogs -->
+    <path d="M50 8 L54 18 L64 16 L65 26 L75 27 L72 37 L81 41 L76 50 L84 57 L77 64 L83 74 L73 78 L76 88 L65 89 L64 99 L54 96 L50 106 L44 96 L35 98 L34 88 L24 88 L26 77 L16 73 L22 64 L15 57 L23 50 L18 40 L27 37 L25 27 L35 26 L36 16 L46 18 Z" 
+          fill="none" stroke="url(#metalGrad)" stroke-width="3" opacity="0.85"/>
+    <circle cx="50" cy="57" r="42" stroke="url(#metalGrad)" stroke-width="4" fill="#0B2D4F" />
+    
+    <!-- Bold N structure machined cutouts -->
+    <path d="M34 32 L44 32 L44 58 L57 32 L66 32 L66 82 L56 82 L56 56 L43 82 L34 82 Z" 
+          fill="url(#metalGrad)" />
+    <!-- Precision indicator pip -->
+    <circle cx="50" cy="57" r="3" fill="#0078FF" />
+  </g>
+
+  <!-- Wordmark NORFAT -->
+  <text x="130" y="65" font-family="'Montserrat', 'Eurostile', 'Segoe UI', sans-serif" font-size="44" font-weight="900" letter-spacing="4" fill="#0B2D4F">
+    NORFAT
+  </text>
+  
+  <!-- Accent Line -->
+  <rect x="132" y="75" width="370" height="3" fill="url(#blueGlow)" rx="1.5" />
+
+  <!-- Subline MANUFACTURING & SUPPLY -->
+  <text x="132" y="98" font-family="'Inter', 'Segoe UI', sans-serif" font-size="14" font-weight="700" letter-spacing="6" fill="#6B7280">
+    MANUFACTURING &amp; SUPPLY
+  </text>
+</svg>

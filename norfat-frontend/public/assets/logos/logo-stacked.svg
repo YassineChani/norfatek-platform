@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="metalGradVert" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="40%" stop-color="#94A3B8" />
+      <stop offset="80%" stop-color="#0078FF" />
+      <stop offset="100%" stop-color="#0B2D4F" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(60, 10)">
+    <path d="M60 10 L65 22 L77 20 L78 32 L90 33 L87 45 L98 50 L92 61 L102 70 L93 78 L101 90 L88 95 L92 107 L79 108 L78 120 L66 116 L61 128 L54 116 L43 118 L42 106 L30 106 L32 93 L20 88 L27 77 L19 69 L28 61 L22 49 L33 45 L31 33 L43 32 L44 20 L56 22 Z" 
+          fill="none" stroke="url(#metalGradVert)" stroke-width="3" opacity="0.85"/>
+    <circle cx="60" cy="69" r="51" stroke="url(#metalGradVert)" stroke-width="4" fill="#0B2D4F" />
+    <path d="M41 38 L53 38 L53 70 L69 38 L80 38 L80 99 L68 99 L68 67 L52 99 L41 99 Z" 
+          fill="url(#metalGradVert)" />
+    <circle cx="60" cy="69" r="4" fill="#0078FF" />
+  </g>
+
+  <text x="120" y="172" text-anchor="middle" font-family="'Montserrat', 'Eurostile', 'Segoe UI', sans-serif" font-size="34" font-weight="900" letter-spacing="4" fill="#0B2D4F">
+    NORFAT
+  </text>
+  <rect x="40" y="184" width="160" height="3" fill="#0078FF" rx="1.5" />
+  <text x="120" y="206" text-anchor="middle" font-family="'Inter', 'Segoe UI', sans-serif" font-size="10" font-weight="700" letter-spacing="3" fill="#6B7280">
+    PRECISION MANUFACTURING
+  </text>
+</svg>
