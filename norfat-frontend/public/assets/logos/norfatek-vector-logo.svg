@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 100" fill="none">
+  <defs>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A00" />
+      <stop offset="100%" stop-color="#E05300" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(10, 10)">
+    <rect x="0" y="0" width="80" height="80" rx="16" fill="url(#orangeGrad)" />
+    <path d="M24 22 H36 L46 54 V22 H56 V58 H44 L34 26 V58 H24 Z" fill="#FFFFFF" />
+  </g>
+  <text x="110" y="56" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="42" font-weight="900" letter-spacing="2" fill="#FFFFFF">NORFATEK</text>
+  <text x="112" y="78" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="4" fill="#F97316">PRECISION MANUFACTURING SIMPLIFIED</text>
+</svg>

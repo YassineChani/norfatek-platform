@@ -11,7 +11,7 @@ import { RouterLink } from '@angular/router';
       <div class="container footer-grid">
         <div class="footer-left">
           <div class="footer-brand">
-            <img src="assets/logos/norfatek-logo.png" alt="NORFATEK Precision Manufacturing Simplified" class="footer-logo-img">
+            <img src="assets/logos/norfatek-vector-logo.svg" alt="NORFATEK Precision Manufacturing Simplified" class="footer-logo-img">
           </div>
           <p class="footer-addr">
             Norfatek provides on-demand manufacturing and engineering solutions by connecting customers with qualified manufacturing partners for CNC machining, Swiss machining, milling, 3D printing, prototyping, and more.
