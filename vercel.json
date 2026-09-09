@@ -1,0 +1,18 @@
+﻿{
+  "version": 2,
+  "builds": [
+    {
+      "src": "norfat-frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "norfat-frontend/dist/norfat-frontend/browser"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/norfat-frontend/browser/index.html"
+    }
+  ]
+}
