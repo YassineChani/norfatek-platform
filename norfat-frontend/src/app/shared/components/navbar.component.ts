@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -11,11 +11,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <div class="container nav-inner">
         <!-- Brand Logo Lockup -->
         <a routerLink="/" class="brand-box">
-          <div class="brand-symbol">N</div>
-          <div class="brand-text">
-            <span class="brand-title">NORFATEK</span>
-            <span class="brand-sub">MANUFACTURING NETWORK</span>
-          </div>
+          <img src="assets/logos/norfatek-logo.png" alt="NORFATEK Precision Manufacturing Simplified" class="brand-logo-img">
         </a>
 
         <!-- Links Matching Exact Specification -->
@@ -57,6 +53,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       align-items: center;
       gap: 12px;
       text-decoration: none;
+    }
+    .brand-logo-img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+      display: block;
     }
     .brand-symbol {
       width: 40px;

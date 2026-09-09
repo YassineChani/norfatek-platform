@@ -11,15 +11,14 @@ import { RouterLink } from '@angular/router';
       <div class="container footer-grid">
         <div class="footer-left">
           <div class="footer-brand">
-            <div class="footer-badge">N</div>
-            <span class="footer-brand-name">NORFATEK MANUFACTURING NETWORK</span>
+            <img src="assets/logos/norfatek-logo.png" alt="NORFATEK Precision Manufacturing Simplified" class="footer-logo-img">
           </div>
           <p class="footer-addr">
             Norfatek provides on-demand manufacturing and engineering solutions by connecting customers with qualified manufacturing partners for CNC machining, Swiss machining, milling, 3D printing, prototyping, and more.
           </p>
           <p class="footer-contact">
             Direct Phone: <a href="tel:+15133022850">+1 (513) 302-2850</a><br>
-            Engineering Inquiries: <a href="mailto:NORFATEK@Contact.com">NORFATEK@Contact.com</a>
+            Engineering Inquiries: <a href="mailto:Contact@Norfatek.com">Contact@Norfatek.com</a>
           </p>
         </div>
         <div class="footer-right">
@@ -31,6 +30,11 @@ import { RouterLink } from '@angular/router';
             <a routerLink="/services">3D Printing</a>
             <a routerLink="/services">Prototyping</a>
             <a routerLink="/services">Engineering Support</a>
+            <a routerLink="/services">Robotics Programming</a>
+            <a routerLink="/services">Web &amp; Mobile Development</a>
+            <a routerLink="/services">AI for Industry</a>
+            <a routerLink="/services">Graphic Design</a>
+            <a routerLink="/services">Industrial AI/OT Cybersecurity</a>
           </div>
           <div class="footer-links-group">
             <div class="footer-heading">Company</div>
@@ -70,6 +74,12 @@ import { RouterLink } from '@angular/router';
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+    .footer-logo-img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      display: block;
     }
     .footer-badge {
       width: 28px;

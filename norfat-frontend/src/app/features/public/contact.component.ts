@@ -174,7 +174,7 @@ import { RouterLink } from '@angular/router';
             </div>
             <div class="info-line">
               <span class="label">Official Email:</span>
-              <span class="val"><a href="mailto:NORFATEK@Contact.com">NORFATEK@Contact.com</a></span>
+              <span class="val"><a href="mailto:Contact@Norfatek.com">Contact@Norfatek.com</a></span>
             </div>
             <div class="info-line">
               <span class="label">Response Time:</span>

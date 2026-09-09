@@ -38,7 +38,7 @@ import { Router } from '@angular/router';
 
         <!-- Quick Fill Helper for Demo -->
         <div class="demo-helper" (click)="quickFill()">
-          <span>Identifiants : <strong>NORFATEK&#64;Contact.com</strong> | Pass: <strong>Admin1234</strong> (cliquez pour remplir)</span>
+          <span>Identifiants : <strong>Contact&#64;Norfatek.com</strong> | Pass: <strong>Admin1234</strong> (cliquez pour remplir)</span>
         </div>
       </div>
     </div>
@@ -150,13 +150,13 @@ export class AdminLoginComponent {
   errorMessage = '';
 
   loginForm: FormGroup = this.fb.group({
-    email: ['NORFATEK@Contact.com', [Validators.required, Validators.email]],
+    email: ['Contact@Norfatek.com', [Validators.required, Validators.email]],
     password: ['Admin1234', Validators.required]
   });
 
   quickFill(): void {
     this.loginForm.setValue({
-      email: 'NORFATEK@Contact.com',
+      email: 'Contact@Norfatek.com',
       password: 'Admin1234'
     });
   }
@@ -168,17 +168,12 @@ export class AdminLoginComponent {
 
     const { email, password } = this.loginForm.value;
 
-    setTimeout(() => {
+    if (email === 'Contact@Norfatek.com' && password === 'Admin1234') {
+      localStorage.setItem('norfatek_admin_logged', 'true');
+      this.router.navigate(['/admin/dashboard']);
+    } else {
+      this.errorMessage = 'Email ou mot de passe incorrect. Utilisez Contact@Norfatek.com / Admin1234';
       this.isLoading = false;
-      const isEmailValid = email.trim().toLowerCase() === 'norfatek@contact.com';
-      const isPassValid = password === 'Admin1234';
-
-      if (isEmailValid && isPassValid) {
-        localStorage.setItem('norfatek_admin_logged', 'true');
-        this.router.navigate(['/admin/dashboard']);
-      } else {
-        this.errorMessage = 'Email ou mot de passe incorrect. Utilisez NORFATEK@Contact.com / Admin1234';
-      }
-    }, 500);
+    }
   }
 }
