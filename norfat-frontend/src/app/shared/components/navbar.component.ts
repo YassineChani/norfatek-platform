@@ -11,7 +11,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <div class="container nav-inner">
         <!-- Brand Logo Lockup -->
         <a routerLink="/" class="brand-box">
-          <img src="assets/logos/norfatek-vector-logo.svg" alt="NORFATEK Precision Manufacturing Simplified" class="brand-logo-img">
+          <img src="assets/logos/norfatek-exact-logo.svg" alt="NORFATEK Precision Manufacturing Simplified" class="brand-logo-img">
         </a>
 
         <!-- Links Matching Exact Specification -->

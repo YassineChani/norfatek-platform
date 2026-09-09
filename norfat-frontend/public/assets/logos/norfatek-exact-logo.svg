@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 140" fill="none">
+  <defs>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="50%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(10, 10)">
+    <path d="M0 20 H36 V110 H0 Z" fill="url(#silverGrad)" />
+    <path d="M84 20 H120 V110 H84 Z" fill="url(#silverGrad)" />
+    <path d="M54 20 L84 20 L54 50 Z" fill="url(#blueGrad)" />
+    <path d="M0 20 L120 95 V110 L84 110 L0 35 Z" fill="url(#blueGrad)" />
+  </g>
+
+  <text x="155" y="75" font-family="'Times New Roman', Georgia, serif" font-size="52" font-weight="700" letter-spacing="9" fill="#FFFFFF">NORFATEK</text>
+  <text x="157" y="105" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="5" fill="#38BDF8">PRECISION MANUFACTURING SIMPLIFIED</text>
+</svg>
