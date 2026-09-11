@@ -519,7 +519,7 @@ export class ContactComponent {
     this.uploadedFiles = this.uploadedFiles.filter(x => x !== f);
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.rfqForm.invalid) return;
     this.isSubmitting.set(true);
     const val = this.rfqForm.value;
@@ -549,14 +549,42 @@ export class ContactComponent {
       }))
     };
 
-    // Save immediately to localStorage
+    // 1. Save to local browser storage
     try {
       const existing = JSON.parse(localStorage.getItem('norfat_public_requests') || '[]');
       existing.unshift(newReq);
       localStorage.setItem('norfat_public_requests', JSON.stringify(existing));
     } catch (e) {}
 
-    // Signals trigger instant re-render in zoneless Angular — no delay needed
+    // 2. Global Cloud Sync via Formspree (Sends email to Contact@Norfatek.com with attachments)
+    try {
+      const formData = new FormData();
+      formData.append('Reference', 'NORFATEK-' + this.refNumber);
+      formData.append('Client Name', `${val.firstName} ${val.lastName}`);
+      formData.append('Company', val.company);
+      formData.append('Email', val.email);
+      formData.append('Phone', val.phone);
+      formData.append('Process Required', val.process);
+      formData.append('Quantity', val.quantity);
+      formData.append('Material Spec', val.material || 'To Be Specified');
+      formData.append('Notes & Scope', val.description || 'N/A');
+
+      // Attach actual CAD/PDF files
+      this.uploadedFiles.forEach((file, index) => {
+        formData.append(`attachment_${index + 1}`, file, file.name);
+      });
+
+      await fetch('https://formspree.io/f/mqaeedoz', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+    } catch (err) {
+      console.warn('Cloud submission handled gracefully:', err);
+    }
+
     this.isSubmitting.set(false);
     this.submitted.set(true);
     this.cdr.markForCheck();
