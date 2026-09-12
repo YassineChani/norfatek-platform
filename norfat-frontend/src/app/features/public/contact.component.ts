@@ -556,34 +556,48 @@ export class ContactComponent {
       localStorage.setItem('norfat_public_requests', JSON.stringify(existing));
     } catch (e) {}
 
-    // 2. Global Cloud Sync via Formspree (Sends email to Contact@Norfatek.com with attachments)
+    // 2. Global Cloud Sync: Write to Live Cloud Database (KVdb) so Admin sees it instantly anywhere in the world
     try {
-      const formData = new FormData();
-      formData.append('Reference', 'NORFATEK-' + this.refNumber);
-      formData.append('Client Name', `${val.firstName} ${val.lastName}`);
-      formData.append('Company', val.company);
-      formData.append('Email', val.email);
-      formData.append('Phone', val.phone);
-      formData.append('Process Required', val.process);
-      formData.append('Quantity', val.quantity);
-      formData.append('Material Spec', val.material || 'To Be Specified');
-      formData.append('Notes & Scope', val.description || 'N/A');
-
-      // Attach actual CAD/PDF files
-      this.uploadedFiles.forEach((file, index) => {
-        formData.append(`attachment_${index + 1}`, file, file.name);
-      });
-
-      await fetch('https://formspree.io/f/mqaeedoz', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json'
+      const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
+      let currentRfqs: any[] = [];
+      try {
+        const getRes = await fetch(cloudEndpoint);
+        if (getRes.ok) {
+          currentRfqs = await getRes.json();
         }
+      } catch (e) {}
+
+      currentRfqs.unshift(newReq);
+
+      await fetch(cloudEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentRfqs)
       });
     } catch (err) {
-      console.warn('Cloud submission handled gracefully:', err);
+      console.warn('Live cloud database sync error:', err);
     }
+
+    // 3. Netlify Forms submission for backup and email notifications
+    try {
+      const netlifyBody = new URLSearchParams();
+      netlifyBody.set('form-name', 'norfatek-rfq');
+      netlifyBody.set('Reference', 'NORFATEK-' + this.refNumber);
+      netlifyBody.set('Client Name', `${val.firstName} ${val.lastName}`);
+      netlifyBody.set('Company', val.company);
+      netlifyBody.set('Email', val.email);
+      netlifyBody.set('Phone', val.phone);
+      netlifyBody.set('Process Required', val.process);
+      netlifyBody.set('Quantity', val.quantity);
+      netlifyBody.set('Material Spec', val.material || 'To Be Specified');
+      netlifyBody.set('Notes & Scope', val.description || 'N/A');
+
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: netlifyBody.toString()
+      }).catch(() => {});
+    } catch (e) {}
 
     this.isSubmitting.set(false);
     this.submitted.set(true);

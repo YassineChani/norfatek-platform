@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -660,8 +660,10 @@ interface CustomService {
     }
   `]
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   router = inject(Router);
+  cdr = inject(ChangeDetectorRef);
+  pollTimer: any = null;
 
   activeTab: 'rfqs' | 'services' = 'rfqs';
   rfqs: RfqRequest[] = [];
@@ -726,55 +728,39 @@ export class AdminDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadRfqs();
     this.loadCustomServices();
+    // Poll every 8 seconds so new RFQs from USA appear automatically
+    this.pollTimer = setInterval(() => this.loadRfqs(), 8000);
   }
 
-  loadRfqs(): void {
+  ngOnDestroy(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+    }
+  }
+
+  async loadRfqs(): Promise<void> {
+    // 1. Load local browser cache first for instant display
     try {
       const stored = JSON.parse(localStorage.getItem('norfat_public_requests') || '[]');
-      if (stored.length > 0) {
+      if (stored && stored.length > 0) {
         this.rfqs = stored;
-      } else {
-        // Sample baseline requests
-        this.rfqs = [
-          {
-            id: 'rfq-sample-1',
-            orderNumber: 'NORFATEK-83492',
-            title: 'CNC Machining Package (15 pcs)',
-            clientName: 'Sarah Connor',
-            clientCompany: 'Apex Defense Robotics',
-            clientEmail: 's.connor@apex.com',
-            clientPhone: '+1 (513) 302-2850',
-            process: 'CNC Machining',
-            material: '6061-T6 Aluminum',
-            quantity: '15 pcs',
-            status: 'Received',
-            description: 'Critical aerospace mounting flange. Ra 0.8 surface finish required.',
-            createdAt: 'Today',
-            quotedPrice: null,
-            files: [{ fileName: 'Flange_Housing_RevB.step' }, { fileName: 'Drawing_RevB.pdf' }]
-          },
-          {
-            id: 'rfq-sample-2',
-            orderNumber: 'NORFATEK-29401',
-            title: '3D Printing Prototype (3 pcs)',
-            clientName: 'David Mercer',
-            clientCompany: 'Orbit Propulsion Inc.',
-            clientEmail: 'd.mercer@orbit.com',
-            clientPhone: '+1 (513) 441-9921',
-            process: '3D Printing',
-            material: 'Titanium Ti-6Al-4V',
-            quantity: '3 pcs',
-            status: 'Received',
-            description: 'DMLS metal printing with post-machined mating face.',
-            createdAt: 'Yesterday',
-            quotedPrice: null,
-            files: [{ fileName: 'Injector_Nozzle_DMLS.stl' }]
-          }
-        ];
-        localStorage.setItem('norfat_public_requests', JSON.stringify(this.rfqs));
       }
-    } catch {
-      this.rfqs = [];
+    } catch (e) {}
+
+    // 2. Fetch live global cloud database (KVdb) so RFQs from USA or anywhere in the world appear instantly
+    try {
+      const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
+      const res = await fetch(cloudEndpoint);
+      if (res.ok) {
+        const cloudData = await res.json();
+        if (Array.isArray(cloudData) && cloudData.length > 0) {
+          this.rfqs = cloudData;
+          localStorage.setItem('norfat_public_requests', JSON.stringify(this.rfqs));
+          this.cdr.markForCheck();
+        }
+      }
+    } catch (err) {
+      console.warn('Cloud sync check:', err);
     }
   }
 
@@ -793,16 +779,21 @@ export class AdminDashboardComponent implements OnInit {
     this.statusSelect = r.status === 'Received' ? 'Approved / Quoted' : r.status;
   }
 
-  applyRfqStatus(): void {
+  async applyRfqStatus(): Promise<void> {
     if (!this.selectedRfq) return;
     this.selectedRfq.status = this.statusSelect;
     if (this.quotePriceInput) {
       this.selectedRfq.quotedPrice = this.quotePriceInput;
     }
 
-    // Save update in localStorage so it stays persisted!
+    // Save update in localStorage and push to cloud database
     try {
       localStorage.setItem('norfat_public_requests', JSON.stringify(this.rfqs));
+      fetch('https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.rfqs)
+      }).catch(() => {});
     } catch {}
 
     this.actionSuccessMsg = `La demande ${this.selectedRfq.orderNumber} a été mise à jour avec succès : Statut "${this.statusSelect}" ${this.quotePriceInput ? 'au prix de $' + this.quotePriceInput : ''} !`;
