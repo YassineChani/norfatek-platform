@@ -587,32 +587,33 @@ export class ContactComponent {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Email Notification — fires ONLY after the request has been confirmed saved in the cloud DB.
+    // 3. Email Notification via Web3Forms — fires ONLY after request confirmed saved in cloud DB.
     //    Any email failure is silently caught and NEVER affects the form result or the saved request.
     if (cloudSaveSucceeded) {
       try {
-        const emailBody = new FormData();
-        emailBody.append('_subject',
-          `New RFQ Received — #NORFATEK-${this.refNumber} | ${val.company}`);
-        emailBody.append('_cc', 'Sales@norfatek.com');
-        emailBody.append('_template', 'table');
-        emailBody.append('_captcha', 'false');
-        emailBody.append('Reference Number', `NORFATEK-${this.refNumber}`);
-        emailBody.append('Client Name',      `${val.firstName} ${val.lastName}`);
-        emailBody.append('Company',          val.company);
-        emailBody.append('Client Email',     val.email);
-        emailBody.append('Phone',            val.phone);
-        emailBody.append('Process Required', val.process);
-        emailBody.append('Material',         val.material || 'To Be Specified');
-        emailBody.append('Quantity',         val.quantity);
-        emailBody.append('Notes & Scope',    val.description || 'N/A');
-        emailBody.append('Submitted At',     new Date().toUTCString());
-        emailBody.append('Admin Dashboard',  'https://norfatek.com/admin');
+        const emailPayload = {
+          access_key: 'dafd8c2e-dd04-4121-a263-91a754569be5',
+          subject: `🔔 New RFQ Received — #NORFATEK-${this.refNumber} | ${val.company}`,
+          from_name: 'Norfatek RFQ System',
+          replyto: val.email,
+          'Reference Number':  `NORFATEK-${this.refNumber}`,
+          'Client Name':       `${val.firstName} ${val.lastName}`,
+          'Company':           val.company,
+          'Client Email':      val.email,
+          'Phone':             val.phone,
+          'Process Required':  val.process,
+          'Material':          val.material || 'To Be Specified',
+          'Quantity':          val.quantity,
+          'Notes & Scope':     val.description || 'N/A',
+          'Submitted At':      new Date().toUTCString(),
+          'Admin Dashboard':   'https://norfatek.com/admin'
+        };
 
-        // Fire-and-forget — result does not block or affect anything
-        fetch('https://formsubmit.co/contact@norfatek.com', {
+        // Fire-and-forget — does not block or affect the form in any way
+        fetch('https://api.web3forms.com/submit', {
           method: 'POST',
-          body: emailBody
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(emailPayload)
         }).catch(() => {/* email errors are intentionally ignored */});
       } catch (e) {/* silent — email failure must never surface to the user */}
     }
