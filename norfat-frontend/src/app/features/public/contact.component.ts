@@ -549,16 +549,20 @@ export class ContactComponent {
       }))
     };
 
-    // 1. Save to local browser storage
+    // 1. Save to local browser storage (always runs first, never blocks)
     try {
       const existing = JSON.parse(localStorage.getItem('norfat_public_requests') || '[]');
       existing.unshift(newReq);
       localStorage.setItem('norfat_public_requests', JSON.stringify(existing));
     } catch (e) {}
 
-    // 2. Global Cloud Sync: Write to Live Cloud Database (KVdb) so Admin sees it instantly anywhere in the world
+    // 2. Global Cloud Sync — write to KVdb so Admin dashboard receives it from anywhere in the world.
+    //    Track whether the cloud write actually succeeded so the email is only sent after confirmation.
+    let cloudSaveSucceeded = false;
     try {
       const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
+
+      // Read current list
       let currentRfqs: any[] = [];
       try {
         const getRes = await fetch(cloudEndpoint);
@@ -567,54 +571,65 @@ export class ContactComponent {
         }
       } catch (e) {}
 
+      // Prepend new request and write back
       currentRfqs.unshift(newReq);
-
-      await fetch(cloudEndpoint, {
+      const writeRes = await fetch(cloudEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentRfqs)
       });
+
+      // Mark success only when the server actually accepted the write
+      if (writeRes.ok) {
+        cloudSaveSucceeded = true;
+      }
     } catch (err) {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Email Notification via FormSubmit.co → contact@norfatek.com + Sales@norfatek.com
-    try {
-      const emailBody = new FormData();
-      emailBody.append('_subject', `New RFQ #NORFATEK-${this.refNumber} — ${val.process} | ${val.company}`);
-      emailBody.append('_cc', 'Sales@norfatek.com');
-      emailBody.append('_template', 'table');
-      emailBody.append('_captcha', 'false');
-      emailBody.append('Reference', `NORFATEK-${this.refNumber}`);
-      emailBody.append('Client Name', `${val.firstName} ${val.lastName}`);
-      emailBody.append('Company', val.company);
-      emailBody.append('Email', val.email);
-      emailBody.append('Phone', val.phone);
-      emailBody.append('Process Required', val.process);
-      emailBody.append('Material Specification', val.material || 'To Be Specified');
-      emailBody.append('Quantity', val.quantity);
-      emailBody.append('Notes & Scope', val.description || 'N/A');
-      emailBody.append('Submitted At', new Date().toUTCString());
+    // 3. Email Notification — fires ONLY after the request has been confirmed saved in the cloud DB.
+    //    Any email failure is silently caught and NEVER affects the form result or the saved request.
+    if (cloudSaveSucceeded) {
+      try {
+        const emailBody = new FormData();
+        emailBody.append('_subject',
+          `New RFQ Received — #NORFATEK-${this.refNumber} | ${val.company}`);
+        emailBody.append('_cc', 'Sales@norfatek.com');
+        emailBody.append('_template', 'table');
+        emailBody.append('_captcha', 'false');
+        emailBody.append('Reference Number', `NORFATEK-${this.refNumber}`);
+        emailBody.append('Client Name',      `${val.firstName} ${val.lastName}`);
+        emailBody.append('Company',          val.company);
+        emailBody.append('Client Email',     val.email);
+        emailBody.append('Phone',            val.phone);
+        emailBody.append('Process Required', val.process);
+        emailBody.append('Material',         val.material || 'To Be Specified');
+        emailBody.append('Quantity',         val.quantity);
+        emailBody.append('Notes & Scope',    val.description || 'N/A');
+        emailBody.append('Submitted At',     new Date().toUTCString());
+        emailBody.append('Admin Dashboard',  'https://norfatek.com/admin');
 
-      fetch('https://formsubmit.co/contact@norfatek.com', {
-        method: 'POST',
-        body: emailBody
-      }).catch(() => {});
-    } catch (e) {}
+        // Fire-and-forget — result does not block or affect anything
+        fetch('https://formsubmit.co/contact@norfatek.com', {
+          method: 'POST',
+          body: emailBody
+        }).catch(() => {/* email errors are intentionally ignored */});
+      } catch (e) {/* silent — email failure must never surface to the user */}
+    }
 
-    // 4. Netlify Forms submission for backup
+    // 4. Netlify Forms — backup submission (non-blocking)
     try {
       const netlifyBody = new URLSearchParams();
-      netlifyBody.set('form-name', 'norfatek-rfq');
-      netlifyBody.set('Reference', 'NORFATEK-' + this.refNumber);
-      netlifyBody.set('Client Name', `${val.firstName} ${val.lastName}`);
-      netlifyBody.set('Company', val.company);
-      netlifyBody.set('Email', val.email);
-      netlifyBody.set('Phone', val.phone);
+      netlifyBody.set('form-name',        'norfatek-rfq');
+      netlifyBody.set('Reference',        'NORFATEK-' + this.refNumber);
+      netlifyBody.set('Client Name',      `${val.firstName} ${val.lastName}`);
+      netlifyBody.set('Company',          val.company);
+      netlifyBody.set('Email',            val.email);
+      netlifyBody.set('Phone',            val.phone);
       netlifyBody.set('Process Required', val.process);
-      netlifyBody.set('Quantity', val.quantity);
-      netlifyBody.set('Material Spec', val.material || 'To Be Specified');
-      netlifyBody.set('Notes & Scope', val.description || 'N/A');
+      netlifyBody.set('Quantity',         val.quantity);
+      netlifyBody.set('Material Spec',    val.material || 'To Be Specified');
+      netlifyBody.set('Notes & Scope',    val.description || 'N/A');
 
       fetch('/', {
         method: 'POST',
