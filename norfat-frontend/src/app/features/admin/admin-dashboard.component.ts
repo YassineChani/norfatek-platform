@@ -53,7 +53,7 @@ interface CustomService {
               + Add New Service
             </button>
             <button (click)="logout()" class="btn-logout">
-              Déconnexion &nbsp;⎋
+              Sign Out &nbsp;⎋
             </button>
           </div>
         </div>
@@ -66,7 +66,7 @@ interface CustomService {
           <div class="action-alert-green">
             <span class="alert-ico">&check;</span>
             <div>
-              <strong>Succès !</strong> {{ actionSuccessMsg }}
+              <strong>Success!</strong> {{ actionSuccessMsg }}
             </div>
           </div>
         }
@@ -128,7 +128,7 @@ interface CustomService {
                         <div class="file-chip-item">
                           <span>📎 {{ f.fileName }}</span>
                           <button type="button" class="download-btn-active" (click)="downloadFile(f)">
-                            ⬇ Télécharger
+                            ⬇ Download
                           </button>
                         </div>
                       }
@@ -152,7 +152,7 @@ interface CustomService {
                     </select>
                   </div>
                   <button (click)="applyRfqStatus()" class="btn-spectre-primary btn-apply">
-                    &check; Valider &amp; Notifier le Client
+                    &check; Approve &amp; Notify Client
                   </button>
                 </div>
               </div>
@@ -216,8 +216,8 @@ interface CustomService {
             <div class="content-card form-service-card">
               <div class="card-header">
                 <div>
-                  <h2>+ Ajouter un Nouveau Service</h2>
-                  <span class="card-sub">Ce service sera instantanément publié et visible par les clients</span>
+                  <h2>+ Add New Service</h2>
+                  <span class="card-sub">This capability will be instantly published and visible to clients</span>
                 </div>
               </div>
 
@@ -243,7 +243,7 @@ interface CustomService {
                 </div>
 
                 <button type="submit" [disabled]="!newServ.title || !newServ.description" class="btn-spectre-primary w-full">
-                  + Publier le Service
+                  + Publish Service
                 </button>
               </form>
             </div>
@@ -796,7 +796,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       }).catch(() => {});
     } catch {}
 
-    this.actionSuccessMsg = `La demande ${this.selectedRfq.orderNumber} a été mise à jour avec succès : Statut "${this.statusSelect}" ${this.quotePriceInput ? 'au prix de $' + this.quotePriceInput : ''} !`;
+    this.actionSuccessMsg = `Quote ${this.selectedRfq.orderNumber} updated successfully: Status "${this.statusSelect}" ${this.quotePriceInput ? 'at $' + this.quotePriceInput : ''}!`;
     setTimeout(() => (this.actionSuccessMsg = ''), 5000);
   }
 
@@ -815,7 +815,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       localStorage.setItem('norfatek_custom_services', JSON.stringify(this.customServices));
     } catch {}
 
-    this.actionSuccessMsg = `Le service "${serv.title}" a été ajouté avec succès !`;
+    this.actionSuccessMsg = `Service "${serv.title}" published successfully!`;
     this.newServ = { title: '', tag: '', description: '' };
     this.newServSpecs = '';
     setTimeout(() => (this.actionSuccessMsg = ''), 4000);

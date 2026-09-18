@@ -578,7 +578,31 @@ export class ContactComponent {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Netlify Forms submission for backup and email notifications
+    // 3. Email Notification via FormSubmit.co → contact@norfatek.com + Sales@norfatek.com
+    try {
+      const emailBody = new FormData();
+      emailBody.append('_subject', `New RFQ #NORFATEK-${this.refNumber} — ${val.process} | ${val.company}`);
+      emailBody.append('_cc', 'Sales@norfatek.com');
+      emailBody.append('_template', 'table');
+      emailBody.append('_captcha', 'false');
+      emailBody.append('Reference', `NORFATEK-${this.refNumber}`);
+      emailBody.append('Client Name', `${val.firstName} ${val.lastName}`);
+      emailBody.append('Company', val.company);
+      emailBody.append('Email', val.email);
+      emailBody.append('Phone', val.phone);
+      emailBody.append('Process Required', val.process);
+      emailBody.append('Material Specification', val.material || 'To Be Specified');
+      emailBody.append('Quantity', val.quantity);
+      emailBody.append('Notes & Scope', val.description || 'N/A');
+      emailBody.append('Submitted At', new Date().toUTCString());
+
+      fetch('https://formsubmit.co/contact@norfatek.com', {
+        method: 'POST',
+        body: emailBody
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 4. Netlify Forms submission for backup
     try {
       const netlifyBody = new URLSearchParams();
       netlifyBody.set('form-name', 'norfatek-rfq');

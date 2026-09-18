@@ -38,7 +38,7 @@ import { Router } from '@angular/router';
 
         <!-- Quick Fill Helper for Demo -->
         <div class="demo-helper" (click)="quickFill()">
-          <span>Identifiants : <strong>Contact&#64;Norfatek.com</strong> | Pass: <strong>Admin1234</strong> (cliquez pour remplir)</span>
+          <span>Demo Credentials: <strong>Contact&#64;Norfatek.com</strong> | Pass: <strong>Admin1234</strong> (click to auto-fill)</span>
         </div>
       </div>
     </div>
@@ -172,7 +172,7 @@ export class AdminLoginComponent {
       localStorage.setItem('norfatek_admin_logged', 'true');
       this.router.navigate(['/admin/dashboard']);
     } else {
-      this.errorMessage = 'Email ou mot de passe incorrect. Utilisez Contact@Norfatek.com / Admin1234';
+      this.errorMessage = 'Invalid email or password. Use Contact@Norfatek.com / Admin1234';
       this.isLoading = false;
     }
   }
