@@ -828,16 +828,41 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     } catch {}
   }
 
-  downloadFile(f: any): void {
-    const dummyContent = `NORFATEK CAD / DRAWING REPOSITORY\nFile Name: ${f.fileName}\nSize: ${f.fileSizeBytes || 1024} bytes\nStatus: Verified for DFM Review`;
-    const blob = new Blob([dummyContent], { type: 'application/octet-stream' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = f.fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  async downloadFile(f: any): Promise<void> {
+    if (!f.downloadUrl || f.downloadUrl === '#') {
+      alert('No file available — this request was submitted without an attachment.');
+      return;
+    }
+    try {
+      // Fetch the base64 data stored in KVdb
+      const res = await fetch(f.downloadUrl);
+      if (!res.ok) throw new Error('File not found');
+      const base64DataUrl = await res.text();
+
+      // Convert base64 data URL → binary blob
+      const [meta, data] = base64DataUrl.split(',');
+      const mime = meta.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: mime });
+
+      // Trigger real browser download with correct filename
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Could not download "${f.fileName}". The file may no longer be available.`);
+    }
   }
+
 
   logout(): void {
     localStorage.removeItem('norfatek_admin_logged');

@@ -501,31 +501,50 @@ export class ContactComponent {
     description: ['']
   });
 
-  onDragOver(e: DragEvent) { e.preventDefault(); this.isDragging = true; }
-  onDrop(e: DragEvent) {
-    e.preventDefault();
-    this.isDragging = false;
-    if (e.dataTransfer?.files) {
-      Array.from(e.dataTransfer.files).forEach(f => this.uploadedFiles.push(f));
-    }
-  }
-  onFileSelect(e: Event) {
-    const input = e.target as HTMLInputElement;
-    if (input.files) {
-      Array.from(input.files).forEach(f => this.uploadedFiles.push(f));
-    }
-  }
-  removeFile(f: File) {
-    this.uploadedFiles = this.uploadedFiles.filter(x => x !== f);
+  // Upload a single file to KVdb as base64 — returns the real download URL
+  private uploadFileToCloud(file: File, rfqId: string): Promise<string> {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string; // data:mime/type;base64,....
+        const safeFileName = file.name.replace(/[^a-z0-9._-]/gi, '_');
+        const fileKey = `file-${rfqId}-${safeFileName}`;
+        const endpoint = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${fileKey}`;
+        try {
+          await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: base64
+          });
+          resolve(endpoint); // real URL admin will fetch to download
+        } catch {
+          resolve('#'); // fallback — file could not be uploaded
+        }
+      };
+      reader.onerror = () => resolve('#');
+      reader.readAsDataURL(file); // convert to base64
+    });
   }
 
   async onSubmit() {
     if (this.rfqForm.invalid) return;
     this.isSubmitting.set(true);
     const val = this.rfqForm.value;
+    const rfqId = 'rfq-' + Date.now();
+
+    // Upload all attached files to cloud storage first, get real download URLs
+    const uploadedFileData = await Promise.all(
+      this.uploadedFiles.map(async f => ({
+        id: 'f-' + Math.random(),
+        fileName: f.name,
+        contentType: f.type || 'application/octet-stream',
+        fileSizeBytes: f.size,
+        downloadUrl: await this.uploadFileToCloud(f, rfqId)
+      }))
+    );
 
     const newReq = {
-      id: 'rfq-' + Date.now(),
+      id: rfqId,
       orderNumber: 'NORFATEK-' + this.refNumber,
       title: `${val.process} Package (${val.quantity} pcs)`,
       clientName: `${val.firstName} ${val.lastName}`,
@@ -540,14 +559,9 @@ export class ContactComponent {
       description: val.description || (`Process: ${val.process} | Material: ${val.material}`),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      files: this.uploadedFiles.map(f => ({
-        id: 'f-' + Math.random(),
-        fileName: f.name,
-        contentType: 'application/octet-stream',
-        fileSizeBytes: f.size,
-        downloadUrl: '#'
-      }))
+      files: uploadedFileData  // ← real files with real download URLs
     };
+
 
     // 1. Save to local browser storage (always runs first, never blocks)
     try {
