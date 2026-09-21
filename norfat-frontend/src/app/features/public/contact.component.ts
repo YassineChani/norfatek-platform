@@ -36,29 +36,29 @@ import { RouterLink } from '@angular/router';
             <form [formGroup]="rfqForm" (ngSubmit)="onSubmit()">
               <div class="input-row">
                 <div class="input-col">
-                  <label>First Name *</label>
-                  <input type="text" formControlName="firstName" class="form-control" placeholder="Sarah">
+                  <label for="firstName">First Name *</label>
+                  <input id="firstName" name="firstName" type="text" formControlName="firstName" class="form-control" placeholder="Sarah" autocomplete="given-name">
                 </div>
                 <div class="input-col">
-                  <label>Last Name *</label>
-                  <input type="text" formControlName="lastName" class="form-control" placeholder="Connor">
+                  <label for="lastName">Last Name *</label>
+                  <input id="lastName" name="lastName" type="text" formControlName="lastName" class="form-control" placeholder="Connor" autocomplete="family-name">
                 </div>
               </div>
 
               <div class="input-row">
                 <div class="input-col">
-                  <label>Work Email Address *</label>
-                  <input type="email" formControlName="email" class="form-control" placeholder="s.connor@apex.com">
+                  <label for="email">Work Email Address *</label>
+                  <input id="email" name="email" type="email" formControlName="email" class="form-control" placeholder="s.connor@apex.com" autocomplete="email">
                 </div>
                 <div class="input-col">
-                  <label>Phone Number *</label>
-                  <input type="text" formControlName="phone" class="form-control" placeholder="+1 (513) 302-2850">
+                  <label for="phone">Phone Number *</label>
+                  <input id="phone" name="phone" type="text" formControlName="phone" class="form-control" placeholder="+1 (513) 302-2850" autocomplete="tel">
                 </div>
               </div>
 
               <div class="input-col full-w">
-                <label>Company / Organization *</label>
-                <input type="text" formControlName="company" class="form-control" placeholder="Apex Engineering &amp; Robotics">
+                <label for="company">Company / Organization *</label>
+                <input id="company" name="company" type="text" formControlName="company" class="form-control" placeholder="Apex Engineering &amp; Robotics" autocomplete="organization">
               </div>
 
               <!-- EXACT SPECIFIED MANUFACTURING PROCESS RADIO OPTIONS -->
@@ -66,43 +66,43 @@ import { RouterLink } from '@angular/router';
                 <label class="section-lbl">Manufacturing Process *</label>
                 <div class="process-radios-grid">
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'CNC Machining'">
-                    <input type="radio" formControlName="process" value="CNC Machining">
+                    <input type="radio" formControlName="process" name="process" value="CNC Machining">
                     <span class="custom-radio"></span>
                     <span class="radio-text">CNC Machining</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'CNC Swiss'">
-                    <input type="radio" formControlName="process" value="CNC Swiss">
+                    <input type="radio" formControlName="process" name="process" value="CNC Swiss">
                     <span class="custom-radio"></span>
                     <span class="radio-text">CNC Swiss</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'CNC Milling'">
-                    <input type="radio" formControlName="process" value="CNC Milling">
+                    <input type="radio" formControlName="process" name="process" value="CNC Milling">
                     <span class="custom-radio"></span>
                     <span class="radio-text">CNC Milling</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === '3D Printing'">
-                    <input type="radio" formControlName="process" value="3D Printing">
+                    <input type="radio" formControlName="process" name="process" value="3D Printing">
                     <span class="custom-radio"></span>
                     <span class="radio-text">3D Printing</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'Prototype'">
-                    <input type="radio" formControlName="process" value="Prototype">
+                    <input type="radio" formControlName="process" name="process" value="Prototype">
                     <span class="custom-radio"></span>
                     <span class="radio-text">Prototype</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'Fabrication'">
-                    <input type="radio" formControlName="process" value="Fabrication">
+                    <input type="radio" formControlName="process" name="process" value="Fabrication">
                     <span class="custom-radio"></span>
                     <span class="radio-text">Fabrication</span>
                   </label>
 
                   <label class="radio-option" [class.selected]="rfqForm.get('process')?.value === 'Others'">
-                    <input type="radio" formControlName="process" value="Others">
+                    <input type="radio" formControlName="process" name="process" value="Others">
                     <span class="custom-radio"></span>
                     <span class="radio-text">Others</span>
                   </label>
@@ -111,12 +111,12 @@ import { RouterLink } from '@angular/router';
 
               <div class="input-row mt-3">
                 <div class="input-col">
-                  <label>Quantity Scope *</label>
-                  <input type="text" formControlName="quantity" class="form-control" placeholder="e.g. 5 prototypes or 2,500 production">
+                  <label for="quantity">Quantity Scope *</label>
+                  <input id="quantity" name="quantity" type="text" formControlName="quantity" class="form-control" placeholder="e.g. 5 prototypes or 2,500 production" autocomplete="off">
                 </div>
                 <div class="input-col">
-                  <label>Material Specification *</label>
-                  <input type="text" formControlName="material" class="form-control" placeholder="e.g. 6061-T6, 316L, Ti64, PEEK">
+                  <label for="material">Material Specification *</label>
+                  <input id="material" name="material" type="text" formControlName="material" class="form-control" placeholder="e.g. 6061-T6, 316L, Ti64, PEEK" autocomplete="off">
                 </div>
               </div>
 
@@ -127,7 +127,7 @@ import { RouterLink } from '@angular/router';
                    (dragleave)="isDragging = false"
                    (drop)="onDrop($event)"
                    (click)="fileInput.click()">
-                <input #fileInput type="file" multiple class="hidden-input"
+                <input #fileInput id="fileInput" name="fileInput" type="file" multiple class="hidden-input"
                        accept=".pdf,.step,.stp,.stl,.iges,.igs,.sldprt,.sldasm,.x_t,.zip"
                        (change)="onFileSelect($event)">
                 
@@ -153,8 +153,8 @@ import { RouterLink } from '@angular/router';
               </div>
 
               <div class="input-col full-w mt-3">
-                <label>Project Scope, Tolerances &amp; Critical Notes</label>
-                <textarea formControlName="description" rows="4" class="form-control" placeholder="Specify tolerances (e.g. ±0.001&quot;), surface finish requirements, inspection standards, or target delivery dates..."></textarea>
+                <label for="description">Project Scope, Tolerances &amp; Critical Notes</label>
+                <textarea id="description" name="description" formControlName="description" rows="4" class="form-control" placeholder="Specify tolerances (e.g. ±0.001&quot;), surface finish requirements, inspection standards, or target delivery dates..." autocomplete="off"></textarea>
               </div>
 
               <button type="submit" [disabled]="rfqForm.invalid || isSubmitting()" class="btn-spectre-primary submit-btn">
@@ -587,8 +587,8 @@ export class ContactComponent {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Email Notification via EmailJS
-    console.log('[NORFATEK] cloudSaveSucceeded =', cloudSaveSucceeded);
+    // 3. Email Notification via EmailJS — fires only after request confirmed saved in cloud DB.
+    //    Any email failure is silently caught and NEVER affects the form result or the saved request.
     if (cloudSaveSucceeded) {
       try {
         const emailPayload = {
@@ -611,41 +611,14 @@ export class ContactComponent {
           }
         };
 
-        console.log('[NORFATEK] Sending EmailJS request...');
-        const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        // Fire-and-forget — does not block or affect the form in any way
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(emailPayload)
-        });
-        const emailText = await emailRes.text();
-        console.log('[NORFATEK] EmailJS status:', emailRes.status, '| response:', emailText);
-      } catch (e) {
-        console.error('[NORFATEK] EmailJS error:', e);
-      }
+        }).catch(() => {});
+      } catch (e) {}
     }
-
-
-
-    // 4. Netlify Forms — backup submission (non-blocking)
-    try {
-      const netlifyBody = new URLSearchParams();
-      netlifyBody.set('form-name',        'norfatek-rfq');
-      netlifyBody.set('Reference',        'NORFATEK-' + this.refNumber);
-      netlifyBody.set('Client Name',      `${val.firstName} ${val.lastName}`);
-      netlifyBody.set('Company',          val.company);
-      netlifyBody.set('Email',            val.email);
-      netlifyBody.set('Phone',            val.phone);
-      netlifyBody.set('Process Required', val.process);
-      netlifyBody.set('Quantity',         val.quantity);
-      netlifyBody.set('Material Spec',    val.material || 'To Be Specified');
-      netlifyBody.set('Notes & Scope',    val.description || 'N/A');
-
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: netlifyBody.toString()
-      }).catch(() => {});
-    } catch (e) {}
 
     this.isSubmitting.set(false);
     this.submitted.set(true);
