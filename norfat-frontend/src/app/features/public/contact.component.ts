@@ -587,36 +587,39 @@ export class ContactComponent {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Email Notification via Web3Forms — fires ONLY after request confirmed saved in cloud DB.
+    // 3. Email Notification via EmailJS — fires ONLY after request confirmed saved in cloud DB.
     //    Any email failure is silently caught and NEVER affects the form result or the saved request.
     if (cloudSaveSucceeded) {
       try {
         const emailPayload = {
-          access_key: 'dafd8c2e-dd04-4121-a263-91a754569be5',
-          subject: `🔔 New RFQ Received — #NORFATEK-${this.refNumber} | ${val.company}`,
-          from_name: 'Norfatek RFQ System',
-          replyto: val.email,
-          'Reference Number':  `NORFATEK-${this.refNumber}`,
-          'Client Name':       `${val.firstName} ${val.lastName}`,
-          'Company':           val.company,
-          'Client Email':      val.email,
-          'Phone':             val.phone,
-          'Process Required':  val.process,
-          'Material':          val.material || 'To Be Specified',
-          'Quantity':          val.quantity,
-          'Notes & Scope':     val.description || 'N/A',
-          'Submitted At':      new Date().toUTCString(),
-          'Admin Dashboard':   'https://norfatek.com/admin'
+          service_id:  'service_t9bpzkb',
+          template_id: 'template_57cgkjd',
+          user_id:     'x5SxsD388c3mscauH',
+          template_params: {
+            name:         `${val.firstName} ${val.lastName}`,
+            email:        val.email,
+            client_name:  `${val.firstName} ${val.lastName}`,
+            company:      val.company,
+            client_email: val.email,
+            phone:        val.phone,
+            reference:    `NORFATEK-${this.refNumber}`,
+            process:      val.process,
+            material:     val.material || 'To Be Specified',
+            quantity:     val.quantity,
+            notes:        val.description || 'N/A',
+            submitted_at: new Date().toUTCString()
+          }
         };
 
         // Fire-and-forget — does not block or affect the form in any way
-        fetch('https://api.web3forms.com/submit', {
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(emailPayload)
         }).catch(() => {/* email errors are intentionally ignored */});
       } catch (e) {/* silent — email failure must never surface to the user */}
     }
+
 
     // 4. Netlify Forms — backup submission (non-blocking)
     try {
