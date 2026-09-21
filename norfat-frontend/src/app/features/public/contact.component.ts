@@ -593,7 +593,7 @@ export class ContactComponent {
       try {
         const emailPayload = {
           service_id:  'service_t9bpzkb',
-          template_id: 'template_57cgkjd',
+          template_id: '57cgkjd',
           user_id:     'x5SxsD388c3mscauH',
           template_params: {
             name:         `${val.firstName} ${val.lastName}`,
