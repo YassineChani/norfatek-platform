@@ -120,35 +120,42 @@ import { RouterLink } from '@angular/router';
                 </div>
               </div>
 
-              <!-- FILE SHARING LINK — Google Drive / Dropbox / WeTransfer -->
-              <div class="file-link-section">
-                <label for="fileShareLink">
-                  📎 &nbsp;CAD Files &amp; Technical Drawings
-                  <span class="optional-badge">Optional</span>
-                </label>
-                <div class="file-link-hint">
-                  <span>Share your files using <strong>Google Drive</strong>, <strong>Dropbox</strong>, or <strong>WeTransfer</strong>:</span>
-                  <ol>
-                    <li>Upload your files to Google Drive or Dropbox</li>
-                    <li>Click <strong>"Share"</strong> → <strong>"Copy link"</strong></li>
-                    <li>Paste the link below</li>
-                  </ol>
-                </div>
-                <input
-                  id="fileShareLink"
-                  name="fileShareLink"
-                  type="url"
-                  formControlName="fileShareLink"
-                  class="form-control"
-                  placeholder="https://drive.google.com/drive/folders/... or https://www.dropbox.com/..."
-                  autocomplete="off">
+              <!-- FILE ATTACHMENT DROPZONE -->
+              <div class="file-upload-zone"
+                   [class.drag-over]="isDragging"
+                   (dragover)="onDragOver($event)"
+                   (dragleave)="isDragging = false"
+                   (drop)="onDrop($event)"
+                   (click)="fileInput.click()">
+                <input #fileInput id="fileInput" name="fileInput" type="file" multiple class="hidden-input"
+                       accept=".pdf,.step,.stp,.stl,.iges,.igs,.sldprt,.sldasm,.x_t,.zip"
+                       (change)="onFileSelect($event)">
+
+                @if (uploadedFiles.length === 0) {
+                  <div class="dz-inner">
+                    <div class="dz-icon-box">📎</div>
+                    <div class="dz-title">Attach CAD Files &amp; 2D Drawings</div>
+                    <div class="dz-sub">Accepts <strong>PDF, STEP, STP, STL, IGES, SolidWorks, ZIP</strong> — files are securely uploaded</div>
+                  </div>
+                } @else {
+                  <div class="dz-files-list" (click)="$event.stopPropagation()">
+                    <span class="dz-count">{{ uploadedFiles.length }} file(s) attached:</span>
+                    <div class="dz-chips">
+                      @for (f of uploadedFiles; track f.name) {
+                        <span class="f-chip">
+                          {{ f.name }} ({{ (f.size / 1024 / 1024) | number:'1.1-1' }}MB)
+                          <button type="button" (click)="removeFile(f)" class="f-remove">&times;</button>
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
               </div>
 
               <div class="input-col full-w mt-3">
                 <label for="description">Project Scope, Tolerances &amp; Critical Notes</label>
                 <textarea id="description" name="description" formControlName="description" rows="4" class="form-control" placeholder="Specify tolerances (e.g. ±0.001&quot;), surface finish requirements, inspection standards, or target delivery dates..." autocomplete="off"></textarea>
               </div>
-
 
               <button type="submit" [disabled]="rfqForm.invalid || isSubmitting()" class="btn-spectre-primary submit-btn">
                 {{ isSubmitting() ? 'Transmitting...' : 'Submit Request for Quote &rarr;' }}
@@ -534,17 +541,75 @@ export class ContactComponent {
     process:       ['CNC Machining', Validators.required],
     quantity:      ['', Validators.required],
     material:      ['', Validators.required],
-    description:   [''],
-    fileShareLink: ['']   // Google Drive / Dropbox / WeTransfer link
+    description:   ['']
   });
 
+  isDragging = false;
+  uploadedFiles: File[] = [];
 
+  onDragOver(e: DragEvent) { e.preventDefault(); this.isDragging = true; }
+  onDrop(e: DragEvent) {
+    e.preventDefault();
+    this.isDragging = false;
+    if (e.dataTransfer?.files) {
+      Array.from(e.dataTransfer.files).forEach(f => this.uploadedFiles.push(f));
+    }
+  }
+  onFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files) {
+      Array.from(input.files).forEach(f => this.uploadedFiles.push(f));
+    }
+  }
+  removeFile(f: File) {
+    this.uploadedFiles = this.uploadedFiles.filter(x => x !== f);
+  }
+
+  /**
+   * Uploads a single file via the Netlify serverless function,
+   * which stores it on catbox.moe and returns a permanent CDN URL.
+   */
+  private uploadFileToCloud(file: File): Promise<string> {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUrl = e.target?.result as string;
+        const base64Content = dataUrl.split(',')[1]; // strip data URL prefix
+        const mimeType = file.type || 'application/octet-stream';
+
+        try {
+          const res = await fetch('/.netlify/functions/upload-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name, base64Content, mimeType })
+          });
+          const { url } = await res.json();
+          resolve(url || '#');
+        } catch {
+          resolve('#'); // silent failure — form still submits
+        }
+      };
+      reader.onerror = () => resolve('#');
+      reader.readAsDataURL(file);
+    });
+  }
 
   async onSubmit() {
     if (this.rfqForm.invalid) return;
     this.isSubmitting.set(true);
     const val = this.rfqForm.value;
     const rfqId = 'rfq-' + Date.now();
+
+    // Upload all attached files first — get real CDN download URLs
+    const uploadedFileData = await Promise.all(
+      this.uploadedFiles.map(async f => ({
+        id: 'f-' + Math.random(),
+        fileName: f.name,
+        contentType: f.type || 'application/octet-stream',
+        fileSizeBytes: f.size,
+        downloadUrl: await this.uploadFileToCloud(f)
+      }))
+    );
 
     const newReq = {
       id: rfqId,
@@ -562,9 +627,9 @@ export class ContactComponent {
       description: val.description || (`Process: ${val.process} | Material: ${val.material}`),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      fileShareLink: val.fileShareLink || '',  // Google Drive / Dropbox / WeTransfer link
-      files: []
+      files: uploadedFileData   // ← real catbox.moe CDN URLs
     };
+
 
     // 1. Save to local browser storage (always runs first, never blocks)
     try {
