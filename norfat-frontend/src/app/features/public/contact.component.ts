@@ -120,42 +120,35 @@ import { RouterLink } from '@angular/router';
                 </div>
               </div>
 
-              <!-- FILE ATTACHMENT DROPZONE -->
-              <div class="file-upload-zone"
-                   [class.drag-over]="isDragging"
-                   (dragover)="onDragOver($event)"
-                   (dragleave)="isDragging = false"
-                   (drop)="onDrop($event)"
-                   (click)="fileInput.click()">
-                <input #fileInput id="fileInput" name="fileInput" type="file" multiple class="hidden-input"
-                       accept=".pdf,.step,.stp,.stl,.iges,.igs,.sldprt,.sldasm,.x_t,.zip"
-                       (change)="onFileSelect($event)">
-                
-                @if (uploadedFiles.length === 0) {
-                  <div class="dz-inner">
-                    <div class="dz-icon-box">📎</div>
-                    <div class="dz-title">Attach CAD Files &amp; 2D Drawings</div>
-                    <div class="dz-sub">Accepts <strong>PDF, STEP, STP, STL, IGES, SolidWorks, ZIP</strong> (Max 50MB)</div>
-                  </div>
-                } @else {
-                  <div class="dz-files-list" (click)="$event.stopPropagation()">
-                    <span class="dz-count">{{ uploadedFiles.length }} file(s) attached:</span>
-                    <div class="dz-chips">
-                      @for (f of uploadedFiles; track f.name) {
-                        <span class="f-chip">
-                          {{ f.name }} ({{ (f.size / 1024 / 1024) | number:'1.1-1' }}MB)
-                          <button type="button" (click)="removeFile(f)" class="f-remove">&times;</button>
-                        </span>
-                      }
-                    </div>
-                  </div>
-                }
+              <!-- FILE SHARING LINK — Google Drive / Dropbox / WeTransfer -->
+              <div class="file-link-section">
+                <label for="fileShareLink">
+                  📎 &nbsp;CAD Files &amp; Technical Drawings
+                  <span class="optional-badge">Optional</span>
+                </label>
+                <div class="file-link-hint">
+                  <span>Share your files using <strong>Google Drive</strong>, <strong>Dropbox</strong>, or <strong>WeTransfer</strong>:</span>
+                  <ol>
+                    <li>Upload your files to Google Drive or Dropbox</li>
+                    <li>Click <strong>"Share"</strong> → <strong>"Copy link"</strong></li>
+                    <li>Paste the link below</li>
+                  </ol>
+                </div>
+                <input
+                  id="fileShareLink"
+                  name="fileShareLink"
+                  type="url"
+                  formControlName="fileShareLink"
+                  class="form-control"
+                  placeholder="https://drive.google.com/drive/folders/... or https://www.dropbox.com/..."
+                  autocomplete="off">
               </div>
 
               <div class="input-col full-w mt-3">
                 <label for="description">Project Scope, Tolerances &amp; Critical Notes</label>
                 <textarea id="description" name="description" formControlName="description" rows="4" class="form-control" placeholder="Specify tolerances (e.g. ±0.001&quot;), surface finish requirements, inspection standards, or target delivery dates..." autocomplete="off"></textarea>
               </div>
+
 
               <button type="submit" [disabled]="rfqForm.invalid || isSubmitting()" class="btn-spectre-primary submit-btn">
                 {{ isSubmitting() ? 'Transmitting...' : 'Submit Request for Quote &rarr;' }}
@@ -472,12 +465,57 @@ import { RouterLink } from '@angular/router';
       color: #d4d4d8;
     }
 
+    /* File sharing link section */
+    .file-link-section {
+      margin-top: 24px;
+    }
+    .file-link-section > label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d4d4d8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .optional-badge {
+      font-size: 0.68rem;
+      background: #27272a;
+      color: #71717a;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+    .file-link-hint {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      color: #a1a1aa;
+    }
+    .file-link-hint span { display: block; margin-bottom: 6px; }
+    .file-link-hint ol {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .file-link-hint strong { color: #f97316; }
+
     @media (max-width: 992px) {
       .contact-grid { grid-template-columns: 1fr; }
       .input-row { grid-template-columns: 1fr; }
       .process-radios-grid { grid-template-columns: 1fr; }
     }
   `]
+
 })
 export class ContactComponent {
   fb  = inject(FormBuilder);
@@ -485,63 +523,28 @@ export class ContactComponent {
 
   submitted    = signal(false);
   isSubmitting = signal(false);
-  isDragging = false;
-  uploadedFiles: File[] = [];
   refNumber = Math.floor(Math.random() * 90000 + 10000);
 
   rfqForm: FormGroup = this.fb.group({
-    firstName: ['', Validators.required],
-    lastName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    phone: ['', Validators.required],
-    company: ['', Validators.required],
-    process: ['CNC Machining', Validators.required],
-    quantity: ['', Validators.required],
-    material: ['', Validators.required],
-    description: ['']
+    firstName:     ['', Validators.required],
+    lastName:      ['', Validators.required],
+    email:         ['', [Validators.required, Validators.email]],
+    phone:         ['', Validators.required],
+    company:       ['', Validators.required],
+    process:       ['CNC Machining', Validators.required],
+    quantity:      ['', Validators.required],
+    material:      ['', Validators.required],
+    description:   [''],
+    fileShareLink: ['']   // Google Drive / Dropbox / WeTransfer link
   });
 
-  // Upload a single file to KVdb as base64 — returns the real download URL
-  private uploadFileToCloud(file: File, rfqId: string): Promise<string> {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string; // data:mime/type;base64,....
-        const safeFileName = file.name.replace(/[^a-z0-9._-]/gi, '_');
-        const fileKey = `file-${rfqId}-${safeFileName}`;
-        const endpoint = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${fileKey}`;
-        try {
-          await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: base64
-          });
-          resolve(endpoint); // real URL admin will fetch to download
-        } catch {
-          resolve('#'); // fallback — file could not be uploaded
-        }
-      };
-      reader.onerror = () => resolve('#');
-      reader.readAsDataURL(file); // convert to base64
-    });
-  }
+
 
   async onSubmit() {
     if (this.rfqForm.invalid) return;
     this.isSubmitting.set(true);
     const val = this.rfqForm.value;
     const rfqId = 'rfq-' + Date.now();
-
-    // Upload all attached files to cloud storage first, get real download URLs
-    const uploadedFileData = await Promise.all(
-      this.uploadedFiles.map(async f => ({
-        id: 'f-' + Math.random(),
-        fileName: f.name,
-        contentType: f.type || 'application/octet-stream',
-        fileSizeBytes: f.size,
-        downloadUrl: await this.uploadFileToCloud(f, rfqId)
-      }))
-    );
 
     const newReq = {
       id: rfqId,
@@ -559,9 +562,9 @@ export class ContactComponent {
       description: val.description || (`Process: ${val.process} | Material: ${val.material}`),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      files: uploadedFileData  // ← real files with real download URLs
+      fileShareLink: val.fileShareLink || '',  // Google Drive / Dropbox / WeTransfer link
+      files: []
     };
-
 
     // 1. Save to local browser storage (always runs first, never blocks)
     try {

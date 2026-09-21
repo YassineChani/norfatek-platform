@@ -136,6 +136,24 @@ interface CustomService {
                   </div>
                 }
 
+                <!-- FILE SHARING LINK — Google Drive / Dropbox / WeTransfer -->
+                @if (selectedRfq.fileShareLink) {
+                  <div class="insp-files">
+                    <span class="i-lbl">📎 Attached CAD & Drawing Files</span>
+                    <div style="margin-top: 10px;">
+                      <a [href]="selectedRfq.fileShareLink"
+                         target="_blank"
+                         rel="noopener"
+                         class="open-files-btn">
+                        📂 &nbsp;Open Shared Files
+                      </a>
+                      <div style="margin-top: 6px; font-size: 0.75rem; color: #71717a;">
+                        Opens in Google Drive / Dropbox / WeTransfer
+                      </div>
+                    </div>
+                  </div>
+                }
+
                 <!-- ACTIONS ROW -->
                 <div class="inspector-controls">
                   <div class="ctrl-group">
@@ -490,6 +508,25 @@ interface CustomService {
       background: #f97316;
       color: #ffffff;
     }
+    .open-files-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      color: #4ade80;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .open-files-btn:hover {
+      background: rgba(74, 222, 128, 0.25);
+      color: #ffffff;
+    }
+
     .inspector-controls {
       display: grid;
       grid-template-columns: 1fr 1fr auto;
