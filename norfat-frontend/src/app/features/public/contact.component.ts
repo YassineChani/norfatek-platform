@@ -587,8 +587,8 @@ export class ContactComponent {
       console.warn('Live cloud database sync error:', err);
     }
 
-    // 3. Email Notification via EmailJS — fires ONLY after request confirmed saved in cloud DB.
-    //    Any email failure is silently caught and NEVER affects the form result or the saved request.
+    // 3. Email Notification via EmailJS
+    console.log('[NORFATEK] cloudSaveSucceeded =', cloudSaveSucceeded);
     if (cloudSaveSucceeded) {
       try {
         const emailPayload = {
@@ -611,14 +611,19 @@ export class ContactComponent {
           }
         };
 
-        // Fire-and-forget — does not block or affect the form in any way
-        fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        console.log('[NORFATEK] Sending EmailJS request...');
+        const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(emailPayload)
-        }).catch(() => {/* email errors are intentionally ignored */});
-      } catch (e) {/* silent — email failure must never surface to the user */}
+        });
+        const emailText = await emailRes.text();
+        console.log('[NORFATEK] EmailJS status:', emailRes.status, '| response:', emailText);
+      } catch (e) {
+        console.error('[NORFATEK] EmailJS error:', e);
+      }
     }
+
 
 
     // 4. Netlify Forms — backup submission (non-blocking)
