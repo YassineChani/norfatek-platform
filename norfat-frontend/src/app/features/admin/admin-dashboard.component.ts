@@ -20,7 +20,7 @@ interface RfqRequest {
   createdAt: string;
   quotedPrice?: number | null;
   fileShareLink?: string;
-  files?: Array<{ fileName: string; fileSizeBytes?: number; downloadUrl?: string; contentType?: string }>;
+  files?: Array<{ fileName: string; fileSizeBytes?: number; downloadUrl?: string; contentType?: string; dataUrl?: string | null }>;
 }
 
 interface CustomService {
@@ -866,44 +866,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     } catch {}
   }
 
-  async downloadFile(f: any): Promise<void> {
-    if (!f.downloadUrl || f.downloadUrl === '#') {
-      alert('No file available — this request was submitted without an attachment.');
+  downloadFile(f: any): void {
+    // New format: dataUrl embedded directly in the RFQ JSON
+    const dataUrl: string | null = f.dataUrl || null;
+
+    if (!dataUrl || !dataUrl.startsWith('data:')) {
+      alert('No file available — this request was submitted without an attachment, or the file was too large (max 2MB).');
       return;
     }
 
-    try {
-      // Fetch JSON from KVdb: { d: "data:mime;base64,..." }
-      const res = await fetch(f.downloadUrl);
-      if (!res.ok) throw new Error('File not found on server');
+    // Decode data URL → binary blob → trigger real browser download
+    const [meta, base64] = dataUrl.split(',');
+    const mimeType = meta.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mimeType });
 
-      const json = await res.json();
-      const dataUrl: string = json.d;
-
-      if (!dataUrl || !dataUrl.startsWith('data:')) {
-        throw new Error('Invalid file data');
-      }
-
-      // Decode data URL → binary blob → trigger download
-      const [meta, base64] = dataUrl.split(',');
-      const mimeType = meta.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: mimeType });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = f.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-    } catch (err) {
-      alert(`Could not download "${f.fileName}". The file may no longer be available.`);
-    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = f.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
 

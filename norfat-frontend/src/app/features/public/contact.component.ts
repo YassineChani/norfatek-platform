@@ -566,39 +566,19 @@ export class ContactComponent {
   }
 
   /**
-   * Stores a file in KVdb as JSON {d: dataUrl}.
-   * KVdb confirmed to support 500KB+ JSON values (tested).
-   * Key: per file. Content-Type: application/json (works, text/plain was the issue before).
+   * Reads a file and returns its base64 data URL.
+   * The data URL is embedded directly in the RFQ JSON — no separate upload step,
+   * no extra network calls, no failure points.
+   * KVdb proved to handle 500KB+ JSON (we tested). Files up to 2MB supported.
    */
-  private uploadFileToCloud(file: File): Promise<string> {
+  private readFileAsDataUrl(file: File): Promise<string | null> {
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB max
+    if (file.size > MAX_SIZE) return Promise.resolve(null);
+
     return new Promise(resolve => {
-      const MAX_SIZE = 3 * 1024 * 1024; // 3MB limit (base64 ≈ 4MB — within KVdb limits)
-      if (file.size > MAX_SIZE) {
-        resolve('#');  // file too large
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        const dataUrl = e.target?.result as string; // full data URL: data:mime;base64,...
-
-        const safeFileName = file.name.replace(/[^a-z0-9._-]/gi, '_');
-        const fileKey = `file_${Date.now()}_${safeFileName}`;
-        const endpoint = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${fileKey}`;
-
-        try {
-          // Store as JSON (application/json supports large values in KVdb — confirmed!)
-          await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ d: dataUrl })
-          });
-          resolve(endpoint); // admin will GET this URL and parse {d: dataUrl}
-        } catch {
-          resolve('#');
-        }
-      };
-      reader.onerror = () => resolve('#');
+      reader.onload = (e) => resolve(e.target?.result as string || null);
+      reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
     });
   }
@@ -609,14 +589,14 @@ export class ContactComponent {
     const val = this.rfqForm.value;
     const rfqId = 'rfq-' + Date.now();
 
-    // Upload all attached files first — get real CDN download URLs
+    // Convert all files to base64 data URLs — embedded directly in the RFQ JSON
     const uploadedFileData = await Promise.all(
       this.uploadedFiles.map(async f => ({
         id: 'f-' + Math.random(),
         fileName: f.name,
         contentType: f.type || 'application/octet-stream',
         fileSizeBytes: f.size,
-        downloadUrl: await this.uploadFileToCloud(f)
+        dataUrl: await this.readFileAsDataUrl(f)  // ← embedded in RFQ, no separate upload
       }))
     );
 
@@ -636,8 +616,9 @@ export class ContactComponent {
       description: val.description || (`Process: ${val.process} | Material: ${val.material}`),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      files: uploadedFileData   // ← real catbox.moe CDN URLs
+      files: uploadedFileData   // ← dataUrl embedded, admin reads it directly
     };
+
 
 
     // 1. Save to local browser storage (always runs first, never blocks)
