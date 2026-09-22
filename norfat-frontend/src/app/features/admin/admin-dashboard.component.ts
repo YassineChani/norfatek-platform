@@ -128,9 +128,13 @@ interface CustomService {
                       @for (f of selectedRfq.files; track f.fileName) {
                         <div class="file-chip-item">
                           <span>📎 {{ f.fileName }}</span>
-                          <button type="button" class="download-btn-active" (click)="downloadFile(f)">
-                            ⬇ Download
-                          </button>
+                          @if (f.dataUrl) {
+                            <button type="button" class="download-btn-active" (click)="downloadFile(f)">
+                              ⬇ Download
+                            </button>
+                          } @else {
+                            <span class="no-file-badge">⚠ File not stored</span>
+                          }
                         </div>
                       }
                     </div>
@@ -508,6 +512,14 @@ interface CustomService {
     .download-btn-active:hover {
       background: #f97316;
       color: #ffffff;
+    }
+    .no-file-badge {
+      font-size: 0.72rem;
+      color: #71717a;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      padding: 4px 10px;
     }
     .open-files-btn {
       display: inline-flex;
