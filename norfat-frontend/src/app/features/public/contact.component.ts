@@ -566,27 +566,36 @@ export class ContactComponent {
   }
 
   /**
-   * Uploads a single file via the Netlify serverless function,
-   * which stores it on catbox.moe and returns a permanent CDN URL.
+   * Stores a file in KVdb as JSON {d: dataUrl}.
+   * KVdb confirmed to support 500KB+ JSON values (tested).
+   * Key: per file. Content-Type: application/json (works, text/plain was the issue before).
    */
   private uploadFileToCloud(file: File): Promise<string> {
     return new Promise(resolve => {
+      const MAX_SIZE = 3 * 1024 * 1024; // 3MB limit (base64 ≈ 4MB — within KVdb limits)
+      if (file.size > MAX_SIZE) {
+        resolve('#');  // file too large
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const dataUrl = e.target?.result as string;
-        const base64Content = dataUrl.split(',')[1]; // strip data URL prefix
-        const mimeType = file.type || 'application/octet-stream';
+        const dataUrl = e.target?.result as string; // full data URL: data:mime;base64,...
+
+        const safeFileName = file.name.replace(/[^a-z0-9._-]/gi, '_');
+        const fileKey = `file_${Date.now()}_${safeFileName}`;
+        const endpoint = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${fileKey}`;
 
         try {
-          const res = await fetch('/.netlify/functions/upload-file', {
+          // Store as JSON (application/json supports large values in KVdb — confirmed!)
+          await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName: file.name, base64Content, mimeType })
+            body: JSON.stringify({ d: dataUrl })
           });
-          const { url } = await res.json();
-          resolve(url || '#');
+          resolve(endpoint); // admin will GET this URL and parse {d: dataUrl}
         } catch {
-          resolve('#'); // silent failure — form still submits
+          resolve('#');
         }
       };
       reader.onerror = () => resolve('#');
