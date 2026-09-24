@@ -596,17 +596,25 @@ export class ContactComponent {
       console.error('[UPLOAD] ❌ Failed to read file as dataUrl:', file.name);
     }
 
-    // 2. Cloud key for cross-device support
+    // 2. Cloud key for cross-device support (awaited with timeout)
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const cloudFileKey = `cad_${rfqId}_${safeFileName}`;
     const cloudFileUrl = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${cloudFileKey}`;
 
-    if (dataUrl && file.size <= 2 * 1024 * 1024) {
-      fetch(cloudFileUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ d: dataUrl, name: file.name, type: mimeType })
-      }).catch(() => {});
+    if (dataUrl && file.size <= 5 * 1024 * 1024) {
+      try {
+        await Promise.race([
+          fetch(cloudFileUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ d: dataUrl, name: file.name, type: mimeType })
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+        ]);
+        console.log('[UPLOAD] ✅ Cloud key saved to KVdb:', cloudFileKey);
+      } catch (err) {
+        console.warn('[UPLOAD] Cloud upload notice:', err);
+      }
     }
 
     return {
@@ -614,8 +622,8 @@ export class ContactComponent {
       contentType: mimeType,
       fileSizeBytes: file.size,
       downloadUrl: cloudFileUrl,
-      // If smaller than 350KB, also embed directly so it's instantly available everywhere
-      dataUrl: file.size < 350 * 1024 ? dataUrl : undefined
+      // Files up to 1MB are embedded directly so admin has instant access across the globe
+      dataUrl: file.size <= 1024 * 1024 ? dataUrl : undefined
     };
   }
 

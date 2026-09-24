@@ -866,12 +866,23 @@ export class SubmitOrderComponent {
           await saveFile(reqId, f.name, f.type || 'application/octet-stream', dataUrl);
         }
 
+        const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const cloudUrl = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/cad_${reqId}_${safeName}`;
+        if (dataUrl && f.size <= 5 * 1024 * 1024) {
+          fetch(cloudUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ d: dataUrl, name: f.name, type: f.type })
+          }).catch(() => {});
+        }
+
         processedFiles.push({
           id: 'f-' + Math.random().toString(36).substring(2, 9),
           fileName: f.name,
           contentType: f.type || 'application/octet-stream',
           fileSizeBytes: f.size,
-          dataUrl: f.size < 350 * 1024 ? dataUrl : undefined
+          downloadUrl: cloudUrl,
+          dataUrl: f.size <= 1024 * 1024 ? dataUrl : undefined
         });
       } catch (err) {
         console.warn('Error saving attachment:', err);
