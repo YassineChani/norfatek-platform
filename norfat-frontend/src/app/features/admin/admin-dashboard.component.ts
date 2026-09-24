@@ -904,9 +904,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           console.log('[DOWNLOAD] Checking cloud KVdb key:', f.downloadUrl);
           const res = await fetch(f.downloadUrl);
           if (res.ok) {
-            const json = await res.json();
-            if (json?.d && json.d.startsWith('data:')) {
-              dataUrl = json.d;
+            const rawText = await res.text();
+            try {
+              const json = JSON.parse(rawText);
+              if (json?.d && json.d.startsWith('data:')) {
+                dataUrl = json.d;
+              } else if (typeof json === 'string' && json.startsWith('data:')) {
+                dataUrl = json;
+              }
+            } catch {
+              if (rawText.startsWith('data:')) {
+                dataUrl = rawText;
+              }
             }
           }
         } catch (err) {
