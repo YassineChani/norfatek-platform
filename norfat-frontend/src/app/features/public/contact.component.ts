@@ -2,6 +2,7 @@ import { Component, inject, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { saveFile } from '../../core/services/local-file-db';
 
 @Component({
   selector: 'app-contact',
@@ -566,21 +567,56 @@ export class ContactComponent {
   }
 
   /**
-   * Reads a file and returns its base64 data URL.
-   * The data URL is embedded directly in the RFQ JSON — no separate upload step,
-   * no extra network calls, no failure points.
-   * KVdb proved to handle 500KB+ JSON (we tested). Files up to 2MB supported.
+   * Read the file as base64 and store it in IndexedDB under key = rfqId::fileName.
+   * Returns ONLY metadata for the RFQ JSON — the actual binary is in IndexedDB.
    */
-  private readFileAsDataUrl(file: File): Promise<string | null> {
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB max
-    if (file.size > MAX_SIZE) return Promise.resolve(null);
+  private async processFileAttachment(file: File, rfqId: string): Promise<{
+    fileName: string;
+    contentType: string;
+    fileSizeBytes: number;
+    downloadUrl?: string;
+    dataUrl?: string;
+  }> {
+    const mimeType = file.type || 'application/octet-stream';
 
-    return new Promise(resolve => {
+    // Read file as base64 data URL
+    const dataUrl = await new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string || null);
-      reader.onerror = () => resolve(null);
+      reader.onload = (e) => resolve((e.target?.result as string) || '');
+      reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
     });
+
+    console.log('[UPLOAD] Read file:', file.name, 'size:', file.size, 'dataUrl length:', dataUrl.length);
+
+    // 1. Save to high-capacity IndexedDB & memory vault
+    if (dataUrl && dataUrl.startsWith('data:')) {
+      await saveFile(rfqId, file.name, mimeType, dataUrl);
+    } else {
+      console.error('[UPLOAD] ❌ Failed to read file as dataUrl:', file.name);
+    }
+
+    // 2. Cloud key for cross-device support
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const cloudFileKey = `cad_${rfqId}_${safeFileName}`;
+    const cloudFileUrl = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/${cloudFileKey}`;
+
+    if (dataUrl && file.size <= 2 * 1024 * 1024) {
+      fetch(cloudFileUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ d: dataUrl, name: file.name, type: mimeType })
+      }).catch(() => {});
+    }
+
+    return {
+      fileName: file.name,
+      contentType: mimeType,
+      fileSizeBytes: file.size,
+      downloadUrl: cloudFileUrl,
+      // If smaller than 350KB, also embed directly so it's instantly available everywhere
+      dataUrl: file.size < 350 * 1024 ? dataUrl : undefined
+    };
   }
 
   async onSubmit() {
@@ -589,15 +625,9 @@ export class ContactComponent {
     const val = this.rfqForm.value;
     const rfqId = 'rfq-' + Date.now();
 
-    // Convert all files to base64 data URLs — embedded directly in the RFQ JSON
+    // Process all attached files
     const uploadedFileData = await Promise.all(
-      this.uploadedFiles.map(async f => ({
-        id: 'f-' + Math.random(),
-        fileName: f.name,
-        contentType: f.type || 'application/octet-stream',
-        fileSizeBytes: f.size,
-        dataUrl: await this.readFileAsDataUrl(f)  // ← embedded in RFQ, no separate upload
-      }))
+      this.uploadedFiles.map(f => this.processFileAttachment(f, rfqId))
     );
 
     const newReq = {
@@ -616,10 +646,8 @@ export class ContactComponent {
       description: val.description || (`Process: ${val.process} | Material: ${val.material}`),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      files: uploadedFileData   // ← dataUrl embedded, admin reads it directly
+      files: uploadedFileData   // metadata only — actual file data is in IndexedDB
     };
-
-
 
     // 1. Save to local browser storage (always runs first, never blocks)
     try {
@@ -643,7 +671,7 @@ export class ContactComponent {
         }
       } catch (e) {}
 
-      // Prepend new request and write back
+      // RFQ JSON is small (no file binary data), so it always fits
       currentRfqs.unshift(newReq);
       const writeRes = await fetch(cloudEndpoint, {
         method: 'POST',

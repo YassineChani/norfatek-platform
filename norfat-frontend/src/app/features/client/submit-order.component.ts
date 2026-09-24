@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
+import { saveFile } from '../../core/services/local-file-db';
 
 @Component({
   selector: 'app-submit-order',
@@ -843,15 +844,43 @@ export class SubmitOrderComponent {
     return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.uploadForm.invalid) return;
     this.isSubmitting = true;
     const val = this.uploadForm.value;
     this.submittedEmail = val.clientEmail;
+    const reqId = 'req-' + Date.now();
+
+    // Process and store attached files in CAD Vault
+    const processedFiles: any[] = [];
+    for (const f of this.uploadedFiles) {
+      try {
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve((e.target?.result as string) || '');
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(f);
+        });
+
+        if (dataUrl) {
+          await saveFile(reqId, f.name, f.type || 'application/octet-stream', dataUrl);
+        }
+
+        processedFiles.push({
+          id: 'f-' + Math.random().toString(36).substring(2, 9),
+          fileName: f.name,
+          contentType: f.type || 'application/octet-stream',
+          fileSizeBytes: f.size,
+          dataUrl: f.size < 350 * 1024 ? dataUrl : undefined
+        });
+      } catch (err) {
+        console.warn('Error saving attachment:', err);
+      }
+    }
 
     // Automatic push to shared storage so Admin dashboard receives it instantly!
     const newReq = {
-      id: 'req-' + Date.now(),
+      id: reqId,
       orderNumber: 'NORFAT-' + this.refNumber,
       title: val.title,
       clientName: val.clientName,
@@ -865,13 +894,7 @@ export class SubmitOrderComponent {
       description: val.description || ('Process: ' + val.process + ' | Material: ' + val.material),
       createdAt: new Date().toISOString(),
       quotedPrice: null,
-      files: this.uploadedFiles.map(f => ({
-        id: 'f-' + Math.random(),
-        fileName: f.name,
-        contentType: 'application/octet-stream',
-        fileSizeBytes: f.size,
-        downloadUrl: '#'
-      }))
+      files: processedFiles
     };
 
     try {
