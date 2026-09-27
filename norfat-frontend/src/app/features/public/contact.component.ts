@@ -670,12 +670,21 @@ export class ContactComponent {
     try {
       const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
 
-      // Read current list
+      // Read current list with strict cache-busting
       let currentRfqs: any[] = [];
       try {
-        const getRes = await fetch(cloudEndpoint);
+        const getRes = await fetch(`${cloudEndpoint}?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         if (getRes.ok) {
-          currentRfqs = await getRes.json();
+          const data = await getRes.json();
+          if (Array.isArray(data)) {
+            currentRfqs = data;
+          }
         }
       } catch (e) {}
 

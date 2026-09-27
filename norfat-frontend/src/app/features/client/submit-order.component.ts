@@ -914,6 +914,34 @@ export class SubmitOrderComponent {
       localStorage.setItem('norfat_public_requests', JSON.stringify(existing));
     } catch (e) {}
 
+    // Global Cloud Sync for portal orders
+    try {
+      const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
+      let currentRfqs: any[] = [];
+      try {
+        const getRes = await fetch(`${cloudEndpoint}?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        if (getRes.ok) {
+          const data = await getRes.json();
+          if (Array.isArray(data)) currentRfqs = data;
+        }
+      } catch (e) {}
+
+      currentRfqs.unshift(newReq);
+      fetch(cloudEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentRfqs)
+      }).catch(() => {});
+    } catch (err) {
+      console.warn('Portal order cloud sync warning:', err);
+    }
+
     setTimeout(() => {
       this.isSubmitting = false;
       this.submitted = true;

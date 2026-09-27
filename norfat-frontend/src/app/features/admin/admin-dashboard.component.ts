@@ -81,7 +81,16 @@ interface CustomService {
                 <h2>Client Quote Requests (RFQs)</h2>
                 <span class="card-sub">Review incoming drawings, approve quotes, and update project status</span>
               </div>
-              <span class="badge-count">{{ rfqs.length }} Requests</span>
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #22c55e; font-weight: 500;">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+                  Live Cloud {{ lastSyncTime ? '(' + lastSyncTime + ')' : '' }}
+                </span>
+                <button type="button" (click)="loadRfqs(true)" [disabled]="isSyncing" style="background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.5); color: #f97316; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                  {{ isSyncing ? '⏳ Syncing...' : '🔄 Refresh' }}
+                </button>
+                <span class="badge-count">{{ rfqs.length }} Requests</span>
+              </div>
             </div>
 
             <!-- DETAIL INSPECTOR DRAWER / MODAL -->
@@ -720,6 +729,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   rfqs: RfqRequest[] = [];
   selectedRfq: RfqRequest | null = null;
   actionSuccessMsg = '';
+  isSyncing = false;
+  lastSyncTime = '';
 
   quotePriceInput: number | null = null;
   statusSelect = 'Approved / Quoted';
@@ -789,29 +800,64 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadRfqs(): Promise<void> {
-    // 1. Load local browser cache first for instant display
+  async loadRfqs(force = false): Promise<void> {
+    if (this.isSyncing && !force) return;
+    this.isSyncing = true;
+
+    // 1. Instant local display on first load
     try {
       const stored = JSON.parse(localStorage.getItem('norfat_public_requests') || '[]');
-      if (stored && stored.length > 0) {
+      if (stored && stored.length > 0 && !this.rfqs.length) {
         this.rfqs = stored;
+        this.cdr.detectChanges();
       }
     } catch (e) {}
 
-    // 2. Fetch live global cloud database (KVdb)
+    // 2. Fetch live global cloud database (KVdb) with strict cache-busting (?_cb=timestamp + headers)
+    // This guarantees browsers in USA, Morocco, and globally bypass edge CDN cache and get fresh live RFQs!
     try {
-      const cloudEndpoint = 'https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs';
-      const res = await fetch(cloudEndpoint);
+      const cacheBust = Date.now();
+      const cloudEndpoint = `https://kvdb.io/H9nmj9FVhhVXBHKzDW7hXZ/norfatek_rfqs?_cb=${cacheBust}`;
+      const res = await fetch(cloudEndpoint, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       if (res.ok) {
         const cloudData = await res.json();
         if (Array.isArray(cloudData) && cloudData.length > 0) {
-          this.rfqs = cloudData;
+          // Merge unique RFQs by id/orderNumber so nothing submitted anywhere is ever lost
+          const existingMap = new Map<string, any>();
+          for (const item of cloudData) {
+            const key = item.id || item.orderNumber;
+            if (key) existingMap.set(key, item);
+          }
+          for (const item of (this.rfqs || [])) {
+            const key = item.id || item.orderNumber;
+            if (key && !existingMap.has(key)) {
+              existingMap.set(key, item);
+            }
+          }
+          // Sort newest first
+          const merged = Array.from(existingMap.values()).sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            return dateB - dateA;
+          });
+
+          this.rfqs = merged;
+          this.lastSyncTime = new Date().toLocaleTimeString();
           localStorage.setItem('norfat_public_requests', JSON.stringify(this.rfqs));
-          this.cdr.markForCheck();
         }
       }
     } catch (err) {
       console.warn('Cloud sync check:', err);
+    } finally {
+      this.isSyncing = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -902,7 +948,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (f.downloadUrl.includes('kvdb.io')) {
         try {
           console.log('[DOWNLOAD] Checking cloud KVdb key:', f.downloadUrl);
-          const res = await fetch(f.downloadUrl);
+          const fetchUrl = f.downloadUrl + (f.downloadUrl.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+          const res = await fetch(fetchUrl, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' }
+          });
           if (res.ok) {
             const rawText = await res.text();
             try {
